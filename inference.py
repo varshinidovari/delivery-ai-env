@@ -12,15 +12,10 @@ steps = 0
 while not done and steps < 20:
 
     action = random.choice(["deliver", "move", "refuel"])
-
     state, reward, done = env.step(action)
 
-    print("[STEP]")
-    print("action:", action)
-    print("reward:", reward)
-    print("score:", state["score"])
+    print(f"[STEP] action={action} reward={reward} score={state['score']}")
 
     steps += 1
 
-print("[END]")
-print("Final Score:", state["score"])
+print(f"[END] Final Score={state['score']}")
