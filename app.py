@@ -1,54 +1,29 @@
-from flask import Flask
+from flask import Flask, jsonify, request
 from env import DeliveryEnv
-import random
 
 app = Flask(__name__)
 
+env = DeliveryEnv()
+
 @app.route("/")
 def home():
-    return """
-    <h1>🚀 AI Smart Delivery Optimization</h1>
-    <p>Status: Running Successfully</p>
-    <hr>
-    <a href="/run">
-    <button style="padding:10px;font-size:16px;">
-    ▶ Run Simulation
-    </button>
-    </a>
-    <hr>
-    <p>🤖 Powered by Varshini AI</p>
-    """
+    return "AI Delivery Optimization Running"
 
-@app.route("/run")
-def run():
-
-    env = DeliveryEnv()
+@app.route("/reset", methods=["POST"])
+def reset():
     state = env.reset()
+    return jsonify(state)
 
-    done = False
-    steps = 0
+@app.route("/step", methods=["POST"])
+def step():
+    action = request.json.get("action")
+    state, reward, done = env.step(action)
 
-    while not done and steps < 10:
-        action = random.choice(["deliver","move","refuel"])
-        state, reward, done = env.step(action)
-        steps += 1
-
-    score = state["score"]
-
-    return f"""
-    <h1>🚚 AI Smart Delivery Optimization</h1>
-    <h2>📊 Simulation Result</h2>
-    <p>✅ Delivery Completed Successfully</p>
-    <p>🏆 Final Score: {score}</p>
-    <hr>
-    <a href="/">
-    <button style="padding:10px;font-size:16px;">
-    ⬅ Back to Home
-    </button>
-    </a>
-    <hr>
-    <p>🤖 Powered by Varshini AI</p>
-    """
+    return jsonify({
+        "state": state,
+        "reward": reward,
+        "done": done
+    })
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=7860)
