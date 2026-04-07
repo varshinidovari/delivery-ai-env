@@ -1,4 +1,3 @@
-
 import random
 from env import DeliveryEnv
 
@@ -6,30 +5,22 @@ print("[START]")
 
 env = DeliveryEnv()
 
-tasks = ["easy", "medium", "hard"]
+state = env.reset()
+done = False
+steps = 0
 
-for task in tasks:
+while not done and steps < 20:
 
-    print("[STEP] Task:", task)
+    action = random.choice(["deliver", "move", "refuel"])
 
-    state = env.reset()
-    done = False
-    steps = 0
+    state, reward, done = env.step(action)
 
-    while not done and steps < 20:
+    print("[STEP]")
+    print("action:", action)
+    print("reward:", reward)
+    print("score:", state["score"])
 
-        action = random.choice(["deliver","move","refuel"])
-
-        state, reward, done = env.step(action)
-
-        print("[STEP]")
-        print("action:", action)
-        print("reward:", reward)
-        print("score:", state["score"])
-
-        steps += 1
-
-    print("[END] Task:", task)
-    print("Final Score:", state["score"])
+    steps += 1
 
 print("[END]")
+print("Final Score:", state["score"])
