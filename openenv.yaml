@@ -1,0 +1,19 @@
+
+name: AI Delivery Optimization
+
+description: Smart AI Delivery Optimization Environment
+
+actions:
+  - deliver
+  - move
+  - refuel
+
+state:
+  - location
+  - orders
+  - fuel
+  - time
+  - traffic
+  - score
+
+reward: maximize delivery efficiency
