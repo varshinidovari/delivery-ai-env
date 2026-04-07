@@ -1,0 +1,12 @@
+[project]
+name = "delivery-ai-env"
+version = "0.1.0"
+description = "AI Smart Delivery Optimization Environment"
+authors = [
+    {name = "Varshini"}
+]
+
+dependencies = [
+    "flask",
+    "numpy"
+]
