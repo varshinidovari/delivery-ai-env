@@ -1,12 +1,11 @@
 [project]
 name = "delivery-ai-env"
 version = "0.1.0"
-description = "AI Smart Delivery Optimization Environment"
-authors = [
-    {name = "Varshini"}
-]
-
+description = "AI Delivery Optimization"
 dependencies = [
     "flask",
-    "numpy"
+    "openenv>=0.2.0"
 ]
+
+[project.scripts]
+server = "server.app:app"
