@@ -1,8 +1,8 @@
 import os
 from openai import OpenAI
 
-API_BASE_URL = os.environ["API_BASE_URL"]
-API_KEY = os.environ["API_KEY"]
+API_BASE_URL = os.environ.get("API_BASE_URL")
+API_KEY = os.environ.get("API_KEY")
 
 client = OpenAI(
     base_url=API_BASE_URL,
@@ -10,27 +10,35 @@ client = OpenAI(
 )
 
 def act(observation):
+
     prompt = f"""
 You are a delivery optimization agent.
 
 Observation:
 {observation}
 
-Choose best action from:
-- deliver
-- move
-- refuel
+Choose best action:
+deliver, move, or refuel
 
-Return only one action.
+Return only one word.
 """
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
-    )
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0
+        )
 
-    action = response.choices[0].message.content.strip()
+        action = response.choices[0].message.content.strip().lower()
 
-    return action
+        if action not in ["deliver", "move", "refuel"]:
+            action = "move"
+
+        return action
+
+    except Exception as e:
+        print("LLM error:", e)
+        return "move"
