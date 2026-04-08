@@ -1,4 +1,4 @@
-[project]
+[project.scripts]
 name = "delivery-ai-env"
 version = "0.1.0"
 description = "AI Smart Delivery Optimization Environment"
