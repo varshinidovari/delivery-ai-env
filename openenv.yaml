@@ -1,4 +1,4 @@
-
+[project.scripts]
 name: AI Delivery Optimization
 
 description: Smart AI Delivery Optimization Environment
@@ -18,4 +18,4 @@ state:
 
 reward: maximize delivery efficiency
 
-server_script: server.app:app
+server = "server.app:app"
