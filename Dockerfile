@@ -4,6 +4,6 @@ WORKDIR /app
 
 COPY . .
 
-RUN pip install flask openenv
+RUN pip install flask openenv openai
 
 CMD ["python", "server/app.py"]
