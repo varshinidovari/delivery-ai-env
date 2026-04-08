@@ -2,11 +2,11 @@
 name = "delivery-ai-env"
 version = "0.1.0"
 description = "AI Smart Delivery Optimization Environment"
-requires-python = ">=3.8"
 
 dependencies = [
     "flask",
     "openenv-core>=0.2.0"
+    "numpy"
 ]
 
 [project.scripts]
