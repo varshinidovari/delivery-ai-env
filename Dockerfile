@@ -5,6 +5,6 @@ WORKDIR /app
 
 COPY . .
 
-RUN pip install -r requirements.txt
+RUN pip install flask openenv-core
 
-CMD ["python","server/app.py"]
+CMD ["python", "server/app.py"]
