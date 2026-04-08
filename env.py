@@ -3,59 +3,93 @@ import random
 class DeliveryEnv:
 
     def __init__(self):
-        self.locations = ["A", "B", "C", "D", "E"]
         self.reset()
 
     def reset(self):
-        self.current_location = random.choice(self.locations)
-        self.pending_orders = random.randint(2,5)
-        self.fuel = 100
+
+        self.location = "warehouse"
+        self.orders = 6
+        self.fuel = 10
         self.time = 0
-        self.traffic = random.choice(["Low","Medium","High"])
-        self.total_reward = 0
+        self.traffic = random.choice(["low", "medium", "high"])
+        self.score = 0.0
 
-        return self.state()
+        # For grading
+        self.delivered = 0
+        self.total_orders = 6
 
-    def state(self):
+        return self.get_state()
+
+
+    def get_state(self):
         return {
-            "location": self.current_location,
-            "orders": self.pending_orders,
+            "location": self.location,
+            "orders": self.orders,
             "fuel": self.fuel,
             "time": self.time,
             "traffic": self.traffic,
-            "score": self.total_reward
+            "score": self.score
         }
+
+
+    def get_score(self):
+
+        # Score between 0 and 1
+        score = self.delivered / (self.total_orders + 1)
+
+        # Ensure strictly between 0 and 1
+        if score <= 0:
+            score = 0.1
+        elif score >= 1:
+            score = 0.9
+
+        return score
+
 
     def step(self, action):
 
         reward = 0
+        done = False
 
-        if action == "deliver" and self.pending_orders > 0:
-            self.pending_orders -= 1
-            reward = 1
+        if action == "move":
 
-        elif action == "move":
-            self.fuel -= 10
+            self.fuel -= 1
             self.time += 1
 
-            if self.traffic == "High":
-                reward = 0.2
-            elif self.traffic == "Medium":
-                reward = 0.4
+            if self.traffic == "high":
+                reward = 0.1
             else:
-                reward = 0.6
+                reward = 0.3
+
+
+        elif action == "deliver":
+
+            if self.orders > 0:
+                self.orders -= 1
+                self.delivered += 1
+                reward = 0.5
+            else:
+                reward = 0.1
+
 
         elif action == "refuel":
-            self.fuel = 100
+
+            self.fuel += 3
             reward = 0.2
 
-        else:
-            reward = -0.5
 
-        done = self.pending_orders == 0 or self.fuel <= 0
+        # Change traffic dynamically
+        self.traffic = random.choice(["low", "medium", "high"])
 
-        self.total_reward += reward
+        # End conditions
+        if self.orders == 0:
+            done = True
 
-        return self.state(), reward, done
+        if self.fuel <= 0:
+            done = True
 
+        # Update score
+        self.score = self.get_score()
+
+        return self.get_state(), reward, done
          
