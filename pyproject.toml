@@ -1,12 +1,12 @@
-[project.scripts]
-name = "delivery-ai-env"
+[project]
+name = "AI Delivery Optimization"
 version = "0.1.0"
 description = "AI Smart Delivery Optimization Environment"
 
 dependencies = [
     "flask",
+    "numpy",
     "openenv-core>=0.2.0"
-    "numpy"
 ]
 
 [project.scripts]
