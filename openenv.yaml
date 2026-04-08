@@ -17,3 +17,5 @@ state:
   - score
 
 reward: maximize delivery efficiency
+
+server_script: server.app:app
