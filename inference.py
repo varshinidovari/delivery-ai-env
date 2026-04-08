@@ -1,21 +1,36 @@
-import random
-from env import DeliveryEnv
+import os
+from openai import OpenAI
 
-print("[START]")
+API_BASE_URL = os.environ["API_BASE_URL"]
+API_KEY = os.environ["API_KEY"]
 
-env = DeliveryEnv()
+client = OpenAI(
+    base_url=API_BASE_URL,
+    api_key=API_KEY
+)
 
-state = env.reset()
-done = False
-steps = 0
+def act(observation):
+    prompt = f"""
+You are a delivery optimization agent.
 
-while not done and steps < 20:
+Observation:
+{observation}
 
-    action = random.choice(["deliver", "move", "refuel"])
-    state, reward, done = env.step(action)
+Choose best action from:
+- deliver
+- move
+- refuel
 
-    print(f"[STEP] action={action} reward={reward} score={state['score']}")
+Return only one action.
+"""
 
-    steps += 1
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
+    )
 
-print(f"[END] Final Score={state['score']}")
+    action = response.choices[0].message.content.strip()
+
+    return action
