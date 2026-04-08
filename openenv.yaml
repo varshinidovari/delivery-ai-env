@@ -1,18 +1,58 @@
 name: AI Delivery Optimization
 
-description: Smart AI Delivery Optimization Environment
+description: |
+  A smart delivery optimization environment where an AI agent must
+  complete deliveries efficiently while managing fuel, time, and traffic
+  conditions.
+
+tasks:
+
+  - name: easy
+    description: Deliver 2 packages
+    difficulty: easy
+    grader:
+      type: score
+      min: 0.1
+      max: 0.9
+
+  - name: medium
+    description: Deliver 4 packages
+    difficulty: medium
+    grader:
+      type: score
+      min: 0.1
+      max: 0.9
+
+  - name: hard
+    description: Deliver 6 packages
+    difficulty: hard
+    grader:
+      type: score
+      min: 0.1
+      max: 0.9
+
 
 actions:
   - deliver
   - move
   - refuel
 
-state:
-  - location
-  - orders
-  - fuel
-  - time
-  - traffic
-  - score
 
-reward: maximize delivery efficiency
+observation_space:
+  location: string
+  orders: integer
+  fuel: integer
+  time: integer
+  traffic: string
+  score: float
+
+
+reward:
+  description: |
+    Agent receives rewards for successful deliveries,
+    efficient movement, and fuel management.
+
+
+episode_termination:
+  - all orders delivered
+  - fuel exhausted
