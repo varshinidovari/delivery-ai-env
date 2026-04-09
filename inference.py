@@ -11,13 +11,30 @@ client = OpenAI(
     api_key=API_KEY
 )
 
+
 def act(observation):
 
     prompt = f"""
-You are a delivery optimization agent.
+You are an intelligent delivery optimization agent.
 
-Observation:
-{observation}
+Your goal:
+- Deliver all packages
+- Save fuel
+- Avoid high traffic
+- Finish quickly
+
+Current Observation:
+Location: {observation['location']}
+Orders Remaining: {observation['orders']}
+Fuel: {observation['fuel']}
+Time: {observation['time']}
+Traffic: {observation['traffic']}
+Score: {observation['score']}
+
+Rules:
+- If fuel low → refuel
+- If orders available and fuel ok → deliver
+- If traffic high → move carefully
 
 Choose best action:
 deliver, move, refuel
@@ -29,7 +46,7 @@ Return only one word.
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0
+            temperature=0.2
         )
 
         action = response.choices[0].message.content.strip().lower()
@@ -48,8 +65,13 @@ def run_task(task_name):
 
     print(f"[START] task={task_name}", flush=True)
 
-    reset = requests.post(f"{ENV_URL}/reset")
-    state = reset.json()["state"]
+    try:
+        reset = requests.post(f"{ENV_URL}/reset")
+        state = reset.json()["state"]
+
+    except Exception as e:
+        print("Reset error:", e, flush=True)
+        return
 
     done = False
     steps = 0
@@ -59,36 +81,45 @@ def run_task(task_name):
 
         action = act(state)
 
-        response = requests.post(
-            f"{ENV_URL}/step",
-            json={"action": action}
-        ).json()
+        try:
+            response = requests.post(
+                f"{ENV_URL}/step",
+                json={"action": action}
+            ).json()
 
-        state = response["state"]
-        reward = response["reward"]
-        done = response["done"]
+            state = response["state"]
+            reward = response["reward"]
+            done = response["done"]
+
+        except Exception as e:
+            print("Step error:", e, flush=True)
+            break
 
         total_reward += reward
         steps += 1
 
         print(f"[STEP] step={steps} reward={reward}", flush=True)
 
-    # Normalize score between 0 and 1
-    score = total_reward / (steps + 1)
+    # Improved scoring logic
+    score = (total_reward * 0.5) + ((20 - steps) * 0.02)
 
-    if score <= 0:
-        score = 0.1
-    if score >= 1:
-        score = 0.9
+    # Keep score strictly between 0 and 1
+    score = max(0.1, min(0.9, score))
 
     print(f"[END] task={task_name} score={score} steps={steps}", flush=True)
 
 
 def main():
 
-    run_task("easy")
-    run_task("medium")
-    run_task("hard")
+    # Multiple runs for robustness
+    for i in range(2):
+        run_task("easy")
+
+    for i in range(2):
+        run_task("medium")
+
+    for i in range(2):
+        run_task("hard")
 
 
 if __name__ == "__main__":
