@@ -6,7 +6,6 @@ description: |
   conditions.
 
 tasks:
-
   - name: easy
     description: Deliver 2 packages
     difficulty: easy
@@ -31,12 +30,10 @@ tasks:
       min: 0.1
       max: 0.9
 
-
 actions:
   - deliver
   - move
   - refuel
-
 
 observation_space:
   location: string
@@ -46,12 +43,8 @@ observation_space:
   traffic: string
   score: float
 
-
 reward:
-  description: |
-    Agent receives rewards for successful deliveries,
-    efficient movement, and fuel management.
-
+  description: Agent receives rewards for efficient delivery
 
 episode_termination:
   - all orders delivered
