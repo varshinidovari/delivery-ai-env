@@ -1,103 +1,103 @@
-import random
+import os
+import requests
+from openai import OpenAI
 
-class DeliveryEnv:
+API_BASE_URL = os.environ.get("API_BASE_URL")
+API_KEY = os.environ.get("API_KEY")
+ENV_URL = os.environ.get("ENV_URL", "http://localhost:7860")
 
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-
-        self.location = "warehouse"
-        self.orders = 6
-        self.fuel = 10
-        self.time = 0
-
-        if self.orders <= 2:
-            self.traffic = "low"
-        elif self.orders <= 4:
-            self.traffic = "medium"
-        else:
-            self.traffic = "high"
-
-        self.score = 0.0
-
-        self.delivered = 0
-        self.total_orders = 6
-
-        return self.get_state()
+client = OpenAI(
+    base_url=API_BASE_URL,
+    api_key=API_KEY
+)
 
 
-    def get_state(self):
-        return {
-            "location": self.location,
-            "orders": self.orders,
-            "fuel": self.fuel,
-            "time": self.time,
-            "traffic": self.traffic,
-            "score": self.score
-        }
+def act(observation):
+
+    prompt = f"""
+You are an intelligent delivery optimization agent.
+
+Observation:
+{observation}
+
+Choose best action:
+deliver, move, refuel
+
+Return only one word.
+"""
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.2
+        )
+
+        action = response.choices[0].message.content.strip().lower()
+
+        if action not in ["deliver", "move", "refuel"]:
+            action = "move"
+
+        return action
+
+    except Exception as e:
+        print(f"LLM error: {e}", flush=True)
+        return "move"
 
 
-    def get_score(self):
+def run_task(task_name):
 
-        score = self.delivered / (self.total_orders + 1)
+    print(f"[START] task={task_name}", flush=True)
 
-        if score <= 0:
-            score = 0.1
-        elif score >= 1:
-            score = 0.9
+    try:
+        reset = requests.post(f"{ENV_URL}/reset")
+        state = reset.json()["state"]
+    except Exception as e:
+        print(f"[END] task={task_name} score=0.1 steps=0", flush=True)
+        return
 
-        return score
+    done = False
+    steps = 0
+    total_reward = 0
 
+    while not done and steps < 20:
 
-    def step(self, action):
+        action = act(state)
 
-        reward = 0
-        done = False
+        try:
+            response = requests.post(
+                f"{ENV_URL}/step",
+                json={"action": action}
+            ).json()
 
-        if action == "move":
+            state = response["state"]
+            reward = response["reward"]
+            done = response["done"]
 
-            self.fuel -= 1
-            self.time += 1
+        except Exception:
+            break
 
-            if self.traffic == "high":
-                reward = 0.1
-                reward -= 0.1
-            else:
-                reward = 0.3
+        steps += 1
+        total_reward += reward
 
+        print(f"[STEP] step={steps} reward={reward}", flush=True)
 
-        elif action == "deliver":
+    score = total_reward / (steps + 1)
 
-            if self.orders > 0:
-                self.orders -= 1
-                self.delivered += 1
-                reward = 0.5
-                reward += 0.2
-            else:
-                reward = 0.1
+    if score <= 0:
+        score = 0.1
+    if score >= 1:
+        score = 0.9
 
-
-        elif action == "refuel":
-
-            self.fuel += 3
-            reward = 0.2
-
-
-        if self.fuel > 5:
-            reward += 0.05
+    print(f"[END] task={task_name} score={score} steps={steps}", flush=True)
 
 
-        self.traffic = random.choice(["low", "medium", "high"])
+def main():
+
+    run_task("easy")
+    run_task("medium")
+    run_task("hard")
 
 
-        if self.orders == 0:
-            done = True
-
-        if self.fuel <= 0:
-            done = True
-
-
-        self.score = self.get_score()
-
-        return self.get_state(), reward, done
+if __name__ == "__main__":
+    main()
