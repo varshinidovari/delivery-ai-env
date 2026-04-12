@@ -1,126 +1,103 @@
-import os
-import requests
-from openai import OpenAI
+import random
 
-API_BASE_URL = os.environ.get("API_BASE_URL")
-API_KEY = os.environ.get("API_KEY")
-ENV_URL = os.environ.get("ENV_URL", "http://localhost:7860")
+class DeliveryEnv:
 
-client = OpenAI(
-    base_url=API_BASE_URL,
-    api_key=API_KEY
-)
+    def __init__(self):
+        self.reset()
 
+    def reset(self):
 
-def act(observation):
+        self.location = "warehouse"
+        self.orders = 6
+        self.fuel = 10
+        self.time = 0
 
-    prompt = f"""
-You are an intelligent delivery optimization agent.
+        if self.orders <= 2:
+            self.traffic = "low"
+        elif self.orders <= 4:
+            self.traffic = "medium"
+        else:
+            self.traffic = "high"
 
-Your goal:
-- Deliver all packages
-- Save fuel
-- Avoid high traffic
-- Finish quickly
+        self.score = 0.0
 
-Current Observation:
-Location: {observation['location']}
-Orders Remaining: {observation['orders']}
-Fuel: {observation['fuel']}
-Time: {observation['time']}
-Traffic: {observation['traffic']}
-Score: {observation['score']}
+        self.delivered = 0
+        self.total_orders = 6
 
-Rules:
-- If fuel low → refuel
-- If orders available and fuel ok → deliver
-- If traffic high → move carefully
-
-Choose best action:
-deliver, move, refuel
-
-Return only one word.
-"""
-
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.2
-        )
-
-        action = response.choices[0].message.content.strip().lower()
-
-        if action not in ["deliver", "move", "refuel"]:
-            action = "move"
-
-        return action
-
-    except Exception as e:
-        print("LLM error:", e, flush=True)
-        return "move"
+        return self.get_state()
 
 
-def run_task(task_name):
-
-    print(f"[START] task={task_name}", flush=True)
-
-    try:
-        reset = requests.post(f"{ENV_URL}/reset")
-        state = reset.json()["state"]
-
-    except Exception as e:
-        print("Reset error:", e, flush=True)
-        return
-
-    done = False
-    steps = 0
-    total_reward = 0
-
-    while not done and steps < 20:
-
-        action = act(state)
-
-        try:
-            response = requests.post(
-                f"{ENV_URL}/step",
-                json={"action": action}
-            ).json()
-
-            state = response["state"]
-            reward = response["reward"]
-            done = response["done"]
-
-        except Exception as e:
-            print("Step error:", e, flush=True)
-            break
-
-        total_reward += reward
-        steps += 1
-
-        print(f"[STEP] step={steps} reward={reward}", flush=True)
-
-    # Improved scoring logic
-    score = (total_reward * 0.5) + ((20 - steps) * 0.02)
-
-    # Keep score strictly between 0 and 1
-    score = max(0.1, min(0.9, score))
-
-    print(f"[END] task={task_name} score={score} steps={steps}", flush=True)
+    def get_state(self):
+        return {
+            "location": self.location,
+            "orders": self.orders,
+            "fuel": self.fuel,
+            "time": self.time,
+            "traffic": self.traffic,
+            "score": self.score
+        }
 
 
-def main():
+    def get_score(self):
 
-    # Multiple runs for robustness
-    for i in range(2):
-        run_task("easy")
+        score = self.delivered / (self.total_orders + 1)
 
-    for i in range(2):
-        run_task("medium")
+        if score <= 0:
+            score = 0.1
+        elif score >= 1:
+            score = 0.9
 
-    for i in range(2):
-        run_task("hard")
+        return score
 
 
-if __name__ == "__main__":
-    main()
+    def step(self, action):
+
+        reward = 0
+        done = False
+
+        if action == "move":
+
+            self.fuel -= 1
+            self.time += 1
+
+            if self.traffic == "high":
+                reward = 0.1
+                reward -= 0.1
+            else:
+                reward = 0.3
+
+
+        elif action == "deliver":
+
+            if self.orders > 0:
+                self.orders -= 1
+                self.delivered += 1
+                reward = 0.5
+                reward += 0.2
+            else:
+                reward = 0.1
+
+
+        elif action == "refuel":
+
+            self.fuel += 3
+            reward = 0.2
+
+
+        if self.fuel > 5:
+            reward += 0.05
+
+
+        self.traffic = random.choice(["low", "medium", "high"])
+
+
+        if self.orders == 0:
+            done = True
+
+        if self.fuel <= 0:
+            done = True
+
+
+        self.score = self.get_score()
+
+        return self.get_state(), reward, done
