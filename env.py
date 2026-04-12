@@ -11,10 +11,16 @@ class DeliveryEnv:
         self.orders = 6
         self.fuel = 10
         self.time = 0
-        self.traffic = random.choice(["low", "medium", "high"])
+
+        if self.orders <= 2:
+            self.traffic = "low"
+        elif self.orders <= 4:
+            self.traffic = "medium"
+        else:
+            self.traffic = "high"
+
         self.score = 0.0
 
-        # For grading
         self.delivered = 0
         self.total_orders = 6
 
@@ -34,10 +40,8 @@ class DeliveryEnv:
 
     def get_score(self):
 
-        # Score between 0 and 1
         score = self.delivered / (self.total_orders + 1)
 
-        # Ensure strictly between 0 and 1
         if score <= 0:
             score = 0.1
         elif score >= 1:
@@ -58,6 +62,7 @@ class DeliveryEnv:
 
             if self.traffic == "high":
                 reward = 0.1
+                reward -= 0.1
             else:
                 reward = 0.3
 
@@ -68,6 +73,7 @@ class DeliveryEnv:
                 self.orders -= 1
                 self.delivered += 1
                 reward = 0.5
+                reward += 0.2
             else:
                 reward = 0.1
 
@@ -78,18 +84,20 @@ class DeliveryEnv:
             reward = 0.2
 
 
-        # Change traffic dynamically
+        if self.fuel > 5:
+            reward += 0.05
+
+
         self.traffic = random.choice(["low", "medium", "high"])
 
-        # End conditions
+
         if self.orders == 0:
             done = True
 
         if self.fuel <= 0:
             done = True
 
-        # Update score
+
         self.score = self.get_score()
 
         return self.get_state(), reward, done
-         
